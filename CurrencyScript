@@ -1,0 +1,13 @@
+local Players = game:GetService("Players")
+
+-- Give starting currency when players join
+Players.PlayerAdded:Connect(function(player)
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Name = "leaderstats"
+	leaderstats.Parent = player
+
+	local coins = Instance.new("IntValue")
+	coins.Name = "Coins"
+	coins.Value = 500  -- Starting amount
+	coins.Parent = leaderstats
+end)
