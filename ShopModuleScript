@@ -16,108 +16,108 @@ purchaseArmorEvent.Parent = remoteFolder
 
 -- Item data
 local weaponItems = {
-    ["Wooden Sword"] = {price = 50, damage = 5},
-    ["Iron Sword"] = {price = 150, damage = 15},
-    ["Fire Staff"] = {price = 300, damage = 25}
+	["G-17"] = {price = 500, damage = 25},
+	["Pickaxe"] = {price = 200, damage = 15},
+	["Spiked Bat"] = {price = 350, damage = 25}
 }
 
 local armorItems = {
-    ["Leather Armor"] = {price = 75, defense = 5},
-    ["Iron Armor"] = {price = 200, defense = 15},
-    ["Magic Robe"] = {price = 350, defense = 10, magicResist = 20}
+	["Stab-proof Vest"] = {price = 250, defense = 10},
+	["Kevlar Vest"] = {price = 550, defense = 20},
+	["Ceramic Plates"] = {price = 150, defense = 5,},
 }
 
 -- Function to check if player has enough currency
 function ShopModule.CanAfford(player, price)
-    -- This is just a placeholder. You would implement your own
-    -- currency system or use an existing one
-    local leaderstats = player:FindFirstChild("leaderstats")
-    if leaderstats then
-        local coins = leaderstats:FindFirstChild("Coins")
-        if coins and coins.Value >= price then
-            return true
-        end
-    end
-    return false
+	-- This is just a placeholder. You would implement your own
+	-- currency system or use an existing one
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local coins = leaderstats:FindFirstChild("Coins")
+		if coins and coins.Value >= price then
+			return true
+		end
+	end
+	return false
 end
 
 -- Function to deduct currency
 function ShopModule.DeductCurrency(player, amount)
-    local leaderstats = player:FindFirstChild("leaderstats")
-    if leaderstats then
-        local coins = leaderstats:FindFirstChild("Coins")
-        if coins then
-            coins.Value = coins.Value - amount
-        end
-    end
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local coins = leaderstats:FindFirstChild("Coins")
+		if coins then
+			coins.Value = coins.Value - amount
+		end
+	end
 end
 
 -- Function to give a weapon to a player
 function ShopModule.GiveWeapon(player, weaponName)
-    local weaponData = weaponItems[weaponName]
-    if not weaponData then return false end
-    
-    -- Create the weapon tool
-    local tool = Instance.new("Tool")
-    tool.Name = weaponName
-    tool.ToolTip = "Damage: " .. weaponData.damage
-    
-    local handle = Instance.new("Part")
-    handle.Name = "Handle"
-    handle.Size = Vector3.new(0.5, 4, 0.5)
-    handle.BrickColor = BrickColor.new("Really black")
-    handle.Parent = tool
-    
-    -- You would add more properties and scripts to make the weapon functional
-    
-    -- Give the tool to the player
-    tool.Parent = player.Backpack
-    
-    return true
+	local weaponData = weaponItems[weaponName]
+	if not weaponData then return false end
+
+	-- Create the weapon tool
+	local tool = Instance.new("Tool")
+	tool.Name = weaponName
+	tool.ToolTip = "Damage: " .. weaponData.damage
+
+	local handle = Instance.new("Part")
+	handle.Name = "Handle"
+	handle.Size = Vector3.new(0.5, 4, 0.5)
+	handle.BrickColor = BrickColor.new("Really black")
+	handle.Parent = tool
+
+	-- You would add more properties and scripts to make the weapon functional
+
+	-- Give the tool to the player
+	tool.Parent = player.Backpack
+
+	return true
 end
 
 -- Function to give armor to a player
 function ShopModule.GiveArmor(player, armorName)
-    local armorData = armorItems[armorName]
-    if not armorData then return false end
-    
-    -- You would implement your armor system here
-    -- This is just a placeholder
-    
-    local success = true -- assuming it works
-    
-    return success
+	local armorData = armorItems[armorName]
+	if not armorData then return false end
+
+	-- You would implement your armor system here
+	-- This is just a placeholder
+
+	local success = true -- assuming it works
+
+	return success
 end
 
 -- Set up purchase handlers
 purchaseWeaponEvent.OnServerEvent:Connect(function(player, weaponName)
-    local weaponData = weaponItems[weaponName]
-    if not weaponData then return end
-    
-    if ShopModule.CanAfford(player, weaponData.price) then
-        ShopModule.DeductCurrency(player, weaponData.price)
-        ShopModule.GiveWeapon(player, weaponName)
-        -- Notify success
-        purchaseWeaponEvent:FireClient(player, true, weaponName)
-    else
-        -- Notify failure
-        purchaseWeaponEvent:FireClient(player, false, "Not enough coins!")
-    end
+	local weaponData = weaponItems[weaponName]
+	if not weaponData then return end
+
+	if ShopModule.CanAfford(player, weaponData.price) then
+		ShopModule.DeductCurrency(player, weaponData.price)
+		ShopModule.GiveWeapon(player, weaponName)
+		-- Notify success
+		purchaseWeaponEvent:FireClient(player, true, weaponName)
+	else
+		-- Notify failure
+		purchaseWeaponEvent:FireClient(player, false, "Not enough coins!")
+	end
 end)
 
 purchaseArmorEvent.OnServerEvent:Connect(function(player, armorName)
-    local armorData = armorItems[armorName]
-    if not armorData then return end
-    
-    if ShopModule.CanAfford(player, armorData.price) then
-        ShopModule.DeductCurrency(player, armorData.price)
-        ShopModule.GiveArmor(player, armorName)
-        -- Notify success
-        purchaseArmorEvent:FireClient(player, true, armorName)
-    else
-        -- Notify failure
-        purchaseArmorEvent:FireClient(player, false, "Not enough coins!")
-    end
+	local armorData = armorItems[armorName]
+	if not armorData then return end
+
+	if ShopModule.CanAfford(player, armorData.price) then
+		ShopModule.DeductCurrency(player, armorData.price)
+		ShopModule.GiveArmor(player, armorName)
+		-- Notify success
+		purchaseArmorEvent:FireClient(player, true, armorName)
+	else
+		-- Notify failure
+		purchaseArmorEvent:FireClient(player, false, "Not enough coins!")
+	end
 end)
 
 return ShopModule
