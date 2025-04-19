@@ -1,0 +1,383 @@
+-- This script handles all UI elements and client interactions
+
+local player = game.Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local remoteFolder = ReplicatedStorage:WaitForChild("ShopRemotes")
+local openDialogueEvent = remoteFolder:WaitForChild("OpenDialogue")
+
+-- Create UI elements
+local dialogueUI
+local shop1UI
+local shop2UI
+
+-- Function to create the dialogue UI
+local function createDialogueUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DialogueUI"
+    screenGui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.5, 0, 0.3, 0)
+    frame.Position = UDim2.new(0.25, 0, 0.6, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.BorderSizePixel = 2
+    frame.BorderColor3 = Color3.fromRGB(100, 100, 100)
+    frame.Parent = screenGui
+    
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 10)
+    uiCorner.Parent = frame
+    
+    -- Dialogue text
+    local dialogueText = Instance.new("TextLabel")
+    dialogueText.Name = "DialogueText"
+    dialogueText.Size = UDim2.new(0.95, 0, 0.5, 0)
+    dialogueText.Position = UDim2.new(0.025, 0, 0.05, 0)
+    dialogueText.BackgroundTransparency = 1
+    dialogueText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    dialogueText.TextSize = 18
+    dialogueText.TextWrapped = true
+    dialogueText.TextXAlignment = Enum.TextXAlignment.Left
+    dialogueText.TextYAlignment = Enum.TextYAlignment.Top
+    dialogueText.Font = Enum.Font.SourceSansSemibold
+    dialogueText.Text = "Hello there! I'm the shop keeper. What would you like to do today?"
+    dialogueText.Parent = frame
+    
+    -- Create option buttons
+    local function createOptionButton(text, position, callback)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.8, 0, 0.1, 0)
+        button.Position = position
+        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.TextSize = 16
+        button.Font = Enum.Font.SourceSansBold
+        button.Text = text
+        button.Parent = frame
+        
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 6)
+        btnCorner.Parent = button
+        
+        button.MouseEnter:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        end)
+        
+        button.MouseLeave:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        end)
+        
+        button.MouseButton1Click:Connect(callback)
+        
+        return button
+    end
+    
+    -- Shop 1 button
+    createOptionButton("Visit Weapon Shop", UDim2.new(0.1, 0, 0.6, 0), function()
+        screenGui.Enabled = false
+        openShop1UI()
+    end)
+    
+    -- Shop 2 button
+    createOptionButton("Visit Armor Shop", UDim2.new(0.1, 0, 0.75, 0), function()
+        screenGui.Enabled = false
+        openShop2UI()
+    end)
+    
+    -- Leave button
+    createOptionButton("Goodbye", UDim2.new(0.1, 0, 0.9, 0), function()
+        screenGui.Enabled = false
+    end)
+    
+    screenGui.Parent = player.PlayerGui
+    screenGui.Enabled = false
+    
+    return screenGui
+end
+
+-- Function to create Shop 1 UI (Weapon Shop)
+local function createShop1UI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "WeaponShopUI"
+    screenGui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.6, 0, 0.7, 0)
+    frame.Position = UDim2.new(0.2, 0, 0.15, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 12)
+    uiCorner.Parent = frame
+    
+    -- Shop title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0.1, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 24
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Text = "Weapon Shop"
+    titleLabel.Parent = frame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 12)
+    titleCorner.Parent = titleLabel
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0.1, 0, 0.05, 0)
+    closeButton.Position = UDim2.new(0.9, -10, 0.02, 0)
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.Text = "X"
+    closeButton.ZIndex = 2
+    closeButton.Parent = frame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0.5, 0)
+    closeCorner.Parent = closeButton
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui.Enabled = false
+        dialogueUI.Enabled = true
+    end)
+    
+    -- Create content (example weapon items)
+    local function createShopItem(name, price, yPos)
+        local itemFrame = Instance.new("Frame")
+        itemFrame.Size = UDim2.new(0.9, 0, 0.15, 0)
+        itemFrame.Position = UDim2.new(0.05, 0, yPos, 0)
+        itemFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        itemFrame.Parent = frame
+        
+        local itemCorner = Instance.new("UICorner")
+        itemCorner.CornerRadius = UDim.new(0, 8)
+        itemCorner.Parent = itemFrame
+        
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(0.6, 0, 0.5, 0)
+        nameLabel.Position = UDim2.new(0.05, 0, 0.1, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextSize = 18
+        nameLabel.Font = Enum.Font.SourceSansSemibold
+        nameLabel.Text = name
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.Parent = itemFrame
+        
+        local priceLabel = Instance.new("TextLabel")
+        priceLabel.Size = UDim2.new(0.6, 0, 0.3, 0)
+        priceLabel.Position = UDim2.new(0.05, 0, 0.6, 0)
+        priceLabel.BackgroundTransparency = 1
+        priceLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
+        priceLabel.TextSize = 14
+        priceLabel.Font = Enum.Font.SourceSans
+        priceLabel.Text = "Price: " .. price .. " coins"
+        priceLabel.TextXAlignment = Enum.TextXAlignment.Left
+        priceLabel.Parent = itemFrame
+        
+        local buyButton = Instance.new("TextButton")
+        buyButton.Size = UDim2.new(0.2, 0, 0.6, 0)
+        buyButton.Position = UDim2.new(0.75, 0, 0.2, 0)
+        buyButton.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
+        buyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        buyButton.TextSize = 16
+        buyButton.Font = Enum.Font.SourceSansBold
+        buyButton.Text = "Buy"
+        buyButton.Parent = itemFrame
+        
+        local buyCorner = Instance.new("UICorner")
+        buyCorner.CornerRadius = UDim.new(0, 6)
+        buyCorner.Parent = buyButton
+        
+        buyButton.MouseButton1Click:Connect(function()
+            -- You can implement actual purchase logic here
+            local notif = Instance.new("TextLabel")
+            notif.Size = UDim2.new(0.5, 0, 0.1, 0)
+            notif.Position = UDim2.new(0.25, 0, 0.85, 0)
+            notif.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            notif.TextColor3 = Color3.fromRGB(255, 255, 255)
+            notif.TextSize = 18
+            notif.Font = Enum.Font.SourceSansSemibold
+            notif.Text = "Purchased " .. name .. "!"
+            notif.Parent = screenGui
+            
+            local notifCorner = Instance.new("UICorner")
+            notifCorner.CornerRadius = UDim.new(0, 8)
+            notifCorner.Parent = notif
+            
+            game:GetService("Debris"):AddItem(notif, 2)
+        end)
+    end
+    
+    createShopItem("Wooden Sword", 50, 0.15)
+    createShopItem("Iron Sword", 150, 0.35)
+    createShopItem("Fire Staff", 300, 0.55)
+    
+    screenGui.Parent = player.PlayerGui
+    screenGui.Enabled = false
+    
+    return screenGui
+end
+
+-- Function to create Shop 2 UI (Armor Shop)
+local function createShop2UI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ArmorShopUI"
+    screenGui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.6, 0, 0.7, 0)
+    frame.Position = UDim2.new(0.2, 0, 0.15, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 12)
+    uiCorner.Parent = frame
+    
+    -- Shop title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0.1, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 24
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Text = "Armor Shop"
+    titleLabel.Parent = frame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 12)
+    titleCorner.Parent = titleLabel
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0.1, 0, 0.05, 0)
+    closeButton.Position = UDim2.new(0.9, -10, 0.02, 0)
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.Text = "X"
+    closeButton.ZIndex = 2
+    closeButton.Parent = frame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0.5, 0)
+    closeCorner.Parent = closeButton
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui.Enabled = false
+        dialogueUI.Enabled = true
+    end)
+    
+    -- Create content (example armor items)
+    local function createShopItem(name, price, yPos)
+        local itemFrame = Instance.new("Frame")
+        itemFrame.Size = UDim2.new(0.9, 0, 0.15, 0)
+        itemFrame.Position = UDim2.new(0.05, 0, yPos, 0)
+        itemFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        itemFrame.Parent = frame
+        
+        local itemCorner = Instance.new("UICorner")
+        itemCorner.CornerRadius = UDim.new(0, 8)
+        itemCorner.Parent = itemFrame
+        
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(0.6, 0, 0.5, 0)
+        nameLabel.Position = UDim2.new(0.05, 0, 0.1, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextSize = 18
+        nameLabel.Font = Enum.Font.SourceSansSemibold
+        nameLabel.Text = name
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.Parent = itemFrame
+        
+        local priceLabel = Instance.new("TextLabel")
+        priceLabel.Size = UDim2.new(0.6, 0, 0.3, 0)
+        priceLabel.Position = UDim2.new(0.05, 0, 0.6, 0)
+        priceLabel.BackgroundTransparency = 1
+        priceLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
+        priceLabel.TextSize = 14
+        priceLabel.Font = Enum.Font.SourceSans
+        priceLabel.Text = "Price: " .. price .. " coins"
+        priceLabel.TextXAlignment = Enum.TextXAlignment.Left
+        priceLabel.Parent = itemFrame
+        
+        local buyButton = Instance.new("TextButton")
+        buyButton.Size = UDim2.new(0.2, 0, 0.6, 0)
+        buyButton.Position = UDim2.new(0.75, 0, 0.2, 0)
+        buyButton.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
+        buyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        buyButton.TextSize = 16
+        buyButton.Font = Enum.Font.SourceSansBold
+        buyButton.Text = "Buy"
+        buyButton.Parent = itemFrame
+        
+        local buyCorner = Instance.new("UICorner")
+        buyCorner.CornerRadius = UDim.new(0, 6)
+        buyCorner.Parent = buyButton
+        
+        buyButton.MouseButton1Click:Connect(function()
+            -- You can implement actual purchase logic here
+            local notif = Instance.new("TextLabel")
+            notif.Size = UDim2.new(0.5, 0, 0.1, 0)
+            notif.Position = UDim2.new(0.25, 0, 0.85, 0)
+            notif.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            notif.TextColor3 = Color3.fromRGB(255, 255, 255)
+            notif.TextSize = 18
+            notif.Font = Enum.Font.SourceSansSemibold
+            notif.Text = "Purchased " .. name .. "!"
+            notif.Parent = screenGui
+            
+            local notifCorner = Instance.new("UICorner")
+            notifCorner.CornerRadius = UDim.new(0, 8)
+            notifCorner.Parent = notif
+            
+            game:GetService("Debris"):AddItem(notif, 2)
+        end)
+    end
+    
+    createShopItem("Leather Armor", 75, 0.15)
+    createShopItem("Iron Armor", 200, 0.35)
+    createShopItem("Magic Robe", 350, 0.55)
+    
+    screenGui.Parent = player.PlayerGui
+    screenGui.Enabled = false
+    
+    return screenGui
+end
+
+-- Function to open Shop 1 UI
+local function openShop1UI()
+    shop1UI.Enabled = true
+end
+
+-- Function to open Shop 2 UI
+local function openShop2UI()
+    shop2UI.Enabled = true
+end
+
+-- Initialize UIs
+local function initializeUI()
+    dialogueUI = createDialogueUI()
+    shop1UI = createShop1UI()
+    shop2UI = createShop2UI()
+end
+
+-- Connect RemoteEvent to open dialogue
+openDialogueEvent.OnClientEvent:Connect(function()
+    dialogueUI.Enabled = true
+end)
+
+-- Initialize UI when script loads
+initializeUI()
