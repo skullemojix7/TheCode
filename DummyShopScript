@@ -1,0 +1,26 @@
+-- This script handles the server-side interaction
+
+local dummy = script.Parent -- The dummy model
+local proximityPrompt = Instance.new("ProximityPrompt")
+proximityPrompt.ObjectText = "Shop Keeper"
+proximityPrompt.ActionText = "Talk"
+proximityPrompt.KeyboardKeyCode = Enum.KeyCode.E
+proximityPrompt.HoldDuration = 0
+proximityPrompt.RequiresLineOfSight = false
+proximityPrompt.Parent = dummy.PrimaryPart or dummy:FindFirstChild("HumanoidRootPart")
+
+-- Create RemoteEvent for client-server communication
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local remoteFolder = ReplicatedStorage:FindFirstChild("ShopRemotes") or Instance.new("Folder")
+remoteFolder.Name = "ShopRemotes"
+remoteFolder.Parent = ReplicatedStorage
+
+local openDialogueEvent = Instance.new("RemoteEvent")
+openDialogueEvent.Name = "OpenDialogue"
+openDialogueEvent.Parent = remoteFolder
+
+-- When player triggers the proximity prompt
+proximityPrompt.Triggered:Connect(function(player)
+    -- Fire client event to open dialogue
+    openDialogueEvent:FireClient(player)
+end)
