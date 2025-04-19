@@ -1,0 +1,162 @@
+-- This module script handles player inventory management
+-- Place this in ServerScriptService or ReplicatedStorage
+
+local InventoryModule = {}
+
+-- Services
+local ServerStorage = game:GetService("ServerStorage")
+local Players = game:GetService("Players")
+
+-- Create inventory folder in ServerStorage for storing templates
+local inventoryStorage = ServerStorage:FindFirstChild("InventoryStorage")
+if not inventoryStorage then
+    inventoryStorage = Instance.new("Folder")
+    inventoryStorage.Name = "InventoryStorage"
+    inventoryStorage.Parent = ServerStorage
+end
+
+-- Player inventory data structure (server-side)
+local playerInventories = {}
+
+-- Function to initialize a player's inventory
+function InventoryModule.InitializeInventory(player)
+    -- Create inventory data structure for this player
+    if not playerInventories[player.UserId] then
+        playerInventories[player.UserId] = {
+            weapons = {},
+            armor = {},
+            consumables = {}
+        }
+        
+        -- Create a folder to store replicated inventory info
+        local inventoryFolder = Instance.new("Folder")
+        inventoryFolder.Name = "Inventory"
+        inventoryFolder.Parent = player
+        
+        -- Create sub-folders for different item types
+        local weaponsFolder = Instance.new("Folder")
+        weaponsFolder.Name = "Weapons"
+        weaponsFolder.Parent = inventoryFolder
+        
+        local armorFolder = Instance.new("Folder")
+        armorFolder.Name = "Armor"
+        armorFolder.Parent = inventoryFolder
+        
+        local consumablesFolder = Instance.new("Folder")
+        consumablesFolder.Name = "Consumables"
+        consumablesFolder.Parent = inventoryFolder
+    end
+    
+    return playerInventories[player.UserId]
+end
+
+-- Function to add item to player's inventory
+function InventoryModule.AddItem(player, itemType, itemName, itemData)
+    local inventory = playerInventories[player.UserId]
+    if not inventory then
+        inventory = InventoryModule.InitializeInventory(player)
+    end
+    
+    -- Validate item type
+    if not inventory[itemType] then
+        warn("Invalid item type: " .. itemType)
+        return false
+    end
+    
+    -- Add item to inventory
+    table.insert(inventory[itemType], {
+        name = itemName,
+        data = itemData
+    })
+    
+    -- Update the replicated inventory folder
+    local inventoryFolder = player:FindFirstChild("Inventory")
+    if inventoryFolder then
+        local typeFolder = inventoryFolder:FindFirstChild(itemType:gsub("^%l", string.upper))
+        if typeFolder then
+            -- Create an IntValue to represent the item
+            local itemValue = Instance.new("StringValue")
+            itemValue.Name = itemName
+            
+            -- Store item properties as attributes
+            for key, value in pairs(itemData) do
+                itemValue:SetAttribute(key, value)
+            end
+            
+            itemValue.Parent = typeFolder
+        end
+    end
+    
+    print("Added " .. itemName .. " to " .. player.Name .. "'s inventory")
+    return true
+end
+
+-- Function to check if player has an item
+function InventoryModule.HasItem(player, itemType, itemName)
+    local inventory = playerInventories[player.UserId]
+    if not inventory then return false end
+    
+    if not inventory[itemType] then return false end
+    
+    for _, item in pairs(inventory[itemType]) do
+        if item.name == itemName then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Function to get item data
+function InventoryModule.GetItemData(player, itemType, itemName)
+    local inventory = playerInventories[player.UserId]
+    if not inventory then return nil end
+    
+    if not inventory[itemType] then return nil end
+    
+    for _, item in pairs(inventory[itemType]) do
+        if item.name == itemName then
+            return item.data
+        end
+    end
+    
+    return nil
+end
+
+-- Function to remove an item from inventory
+function InventoryModule.RemoveItem(player, itemType, itemName)
+    local inventory = playerInventories[player.UserId]
+    if not inventory then return false end
+    
+    if not inventory[itemType] then return false end
+    
+    for i, item in pairs(inventory[itemType]) do
+        if item.name == itemName then
+            table.remove(inventory[itemType], i)
+            
+            -- Update the replicated inventory folder
+            local inventoryFolder = player:FindFirstChild("Inventory")
+            if inventoryFolder then
+                local typeFolder = inventoryFolder:FindFirstChild(itemType:gsub("^%l", string.upper))
+                if typeFolder then
+                    local itemValue = typeFolder:FindFirstChild(itemName)
+                    if itemValue then
+                        itemValue:Destroy()
+                    end
+                end
+            end
+            
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Handle player leaving
+Players.PlayerRemoving:Connect(function(player)
+    -- Clean up inventory data when player leaves
+    playerInventories[player.UserId] = nil
+end)
+
+return InventoryModule
