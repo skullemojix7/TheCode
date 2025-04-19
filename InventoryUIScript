@@ -1,0 +1,340 @@
+-- This script creates an inventory UI for players
+-- Place this in StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local remoteFolder = ReplicatedStorage:WaitForChild("ShopRemotes")
+local getCurrencyFunc = remoteFolder:WaitForChild("GetCurrency")
+
+-- Create inventory UI
+local inventoryUI
+
+-- Function to create the inventory UI
+local function createInventoryUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "InventoryUI"
+    screenGui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.7, 0, 0.8, 0)
+    frame.Position = UDim2.new(0.15, 0, 0.1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 12)
+    uiCorner.Parent = frame
+    
+    -- Inventory title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0.1, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(50, 70, 90)
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 24
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Text = "Inventory"
+    titleLabel.Parent = frame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 12)
+    titleCorner.Parent = titleLabel
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0.1, 0, 0.05, 0)
+    closeButton.Position = UDim2.new(0.9, -10, 0.02, 0)
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.Text = "X"
+    closeButton.ZIndex = 2
+    closeButton.Parent = frame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0.5, 0)
+    closeCorner.Parent = closeButton
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui.Enabled = false
+    end)
+    
+    -- Currency display
+    local currencyFrame = Instance.new("Frame")
+    currencyFrame.Size = UDim2.new(0.3, 0, 0.05, 0)
+    currencyFrame.Position = UDim2.new(0.05, 0, 0.12, 0)
+    currencyFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    currencyFrame.BorderSizePixel = 0
+    currencyFrame.Parent = frame
+    
+    local currencyCorner = Instance.new("UICorner")
+    currencyCorner.CornerRadius = UDim.new(0, 6)
+    currencyCorner.Parent = currencyFrame
+    
+    local currencyIcon = Instance.new("TextLabel")
+    currencyIcon.Size = UDim2.new(0.15, 0, 1, 0)
+    currencyIcon.Position = UDim2.new(0, 0, 0, 0)
+    currencyIcon.BackgroundTransparency = 1
+    currencyIcon.TextColor3 = Color3.fromRGB(255, 215, 0)
+    currencyIcon.TextSize = 18
+    currencyIcon.Font = Enum.Font.SourceSansBold
+    currencyIcon.Text = "$"
+    currencyIcon.Parent = currencyFrame
+    
+    local currencyText = Instance.new("TextLabel")
+    currencyText.Name = "CurrencyText"
+    currencyText.Size = UDim2.new(0.85, 0, 1, 0)
+    currencyText.Position = UDim2.new(0.15, 0, 0, 0)
+    currencyText.BackgroundTransparency = 1
+    currencyText.TextColor3 = Color3.fromRGB(255, 215, 0)
+    currencyText.TextSize = 18
+    currencyText.Font = Enum.Font.SourceSansBold
+    currencyText.Text = "0"
+    currencyText.TextXAlignment = Enum.TextXAlignment.Left
+    currencyText.Parent = currencyFrame
+    
+    -- Tab buttons
+    local tabButtons = {}
+    local tabFrames = {}
+    
+    local function createTab(name, position)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.3, 0, 0.05, 0)
+        button.Position = position
+        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.TextSize = 16
+        button.Font = Enum.Font.SourceSansBold
+        button.Text = name
+        button.Parent = frame
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 6)
+        buttonCorner.Parent = button
+        
+        local tabFrame = Instance.new("ScrollingFrame")
+        tabFrame.Size = UDim2.new(0.9, 0, 0.7, 0)
+        tabFrame.Position = UDim2.new(0.05, 0, 0.25, 0)
+        tabFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        tabFrame.BorderSizePixel = 0
+        tabFrame.ScrollBarThickness = 6
+        tabFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+        tabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        tabFrame.Visible = false
+        tabFrame.Parent = frame
+        
+        local tabFrameCorner = Instance.new("UICorner")
+        tabFrameCorner.CornerRadius = UDim.new(0, 6)
+        tabFrameCorner.Parent = tabFrame
+        
+        table.insert(tabButtons, button)
+        tabFrames[name] = tabFrame
+        
+        button.MouseButton1Click:Connect(function()
+            -- Hide all tabs
+            for _, f in pairs(tabFrames) do
+                f.Visible = false
+            end
+            
+            -- Reset all buttons
+            for _, b in pairs(tabButtons) do
+                b.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            end
+            
+            -- Show selected tab
+            tabFrame.Visible = true
+            button.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+        end)
+        
+        return tabFrame
+    end
+    
+    local weaponsTab = createTab("Weapons", UDim2.new(0.05, 0, 0.18, 0))
+    local armorTab = createTab("Armor", UDim2.new(0.375, 0, 0.18, 0))
+    local consumablesTab = createTab("Consumables", UDim2.new(0.7, 0, 0.18, 0))
+    
+    -- Function to create an item display
+    local function createItemDisplay(parent, itemName, itemData, index)
+        local yPos = 0.05 + ((index - 1) * 0.11)
+        
+        local itemFrame = Instance.new("Frame")
+        itemFrame.Size = UDim2.new(0.95, 0, 0, 40)
+        itemFrame.Position = UDim2.new(0.025, 0, yPos, 0)
+        itemFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        itemFrame.BorderSizePixel = 0
+        itemFrame.Parent = parent
+        
+        local itemCorner = Instance.new("UICorner")
+        itemCorner.CornerRadius = UDim.new(0, 6)
+        itemCorner.Parent = itemFrame
+        
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(0.7, 0, 0.5, 0)
+        nameLabel.Position = UDim2.new(0.05, 0, 0.1, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextSize = 18
+        nameLabel.Font = Enum.Font.SourceSansSemibold
+        nameLabel.Text = itemName
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.Parent = itemFrame
+        
+        -- Create text to display item stats
+        local statsText = ""
+        
+        -- Format stats based on item type
+        if itemData.damage then
+            statsText = "DMG: " .. itemData.damage
+            if itemData.magicDamage then
+                statsText = statsText .. " | M.DMG: " .. itemData.magicDamage
+            end
+        elseif itemData.defense then
+            statsText = "DEF: " .. itemData.defense
+            if itemData.magicDefense then
+                statsText = statsText .. " | M.DEF: " .. itemData.magicDefense
+            end
+        end
+        
+        if itemData.durability then
+            if statsText ~= "" then
+                statsText = statsText .. " | "
+            end
+            statsText = statsText .. "DUR: " .. itemData.durability
+        end
+        
+        local statsLabel = Instance.new("TextLabel")
+        statsLabel.Size = UDim2.new(0.9, 0, 0.4, 0)
+        statsLabel.Position = UDim2.new(0.05, 0, 0.6, 0)
+        statsLabel.BackgroundTransparency = 1
+        statsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        statsLabel.TextSize = 14
+        statsLabel.Font = Enum.Font.SourceSans
+        statsLabel.Text = statsText
+        statsLabel.TextXAlignment = Enum.TextXAlignment.Left
+        statsLabel.Parent = itemFrame
+        
+        return itemFrame
+    end
+    
+    -- Function to update the inventory display
+    local function updateInventory()
+        -- Clear existing items
+        for _, frame in pairs(tabFrames) do
+            for _, child in pairs(frame:GetChildren()) do
+                if child:IsA("Frame") then
+                    child:Destroy()
+                end
+            end
+        end
+        
+        -- Update currency display
+        local currency = getCurrencyFunc:InvokeServer()
+        currencyText.Text = tostring(currency)
+        
+        -- Get inventory data from player
+        local inventoryFolder = player:FindFirstChild("Inventory")
+        if not inventoryFolder then return end
+        
+        -- Update weapons tab
+        local weaponsFolder = inventoryFolder:FindFirstChild("Weapons")
+        if weaponsFolder then
+            local index = 1
+            for _, item in pairs(weaponsFolder:GetChildren()) do
+                if item:IsA("StringValue") then
+                    local itemData = {}
+                    for _, attr in pairs(item:GetAttributes()) do
+                        itemData[attr] = item:GetAttribute(attr)
+                    end
+                    createItemDisplay(weaponsTab, item.Name, itemData, index)
+                    index = index + 1
+                end
+            end
+        end
+        
+        -- Update armor tab
+        local armorFolder = inventoryFolder:FindFirstChild("Armor")
+        if armorFolder then
+            local index = 1
+            for _, item in pairs(armorFolder:GetChildren()) do
+                if item:IsA("StringValue") then
+                    local itemData = {}
+                    for _, attr in pairs(item:GetAttributes()) do
+                        itemData[attr] = item:GetAttribute(attr)
+                    end
+                    createItemDisplay(armorTab, item.Name, itemData, index)
+                    index = index + 1
+                end
+            end
+        end
+        
+        -- Update consumables tab (if you have any)
+        local consumablesFolder = inventoryFolder:FindFirstChild("Consumables")
+        if consumablesFolder then
+            local index = 1
+            for _, item in pairs(consumablesFolder:GetChildren()) do
+                if item:IsA("StringValue") then
+                    local itemData = {}
+                    for _, attr in pairs(item:GetAttributes()) do
+                        itemData[attr] = item:GetAttribute(attr)
+                    end
+                    createItemDisplay(consumablesTab, item.Name, itemData, index)
+                    index = index + 1
+                end
+            end
+        end
+    end
+    
+    -- Set the default tab to weapons
+    weaponsTab.Visible = true
+    tabButtons[1].BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+    
+    -- Update inventory when UI is opened
+    screenGui.Changed:Connect(function(property)
+        if property == "Enabled" and screenGui.Enabled then
+            updateInventory()
+        end
+    end)
+    
+    -- Update inventory when items change
+    player.ChildAdded:Connect(function(child)
+        if child.Name == "Inventory" then
+            child.DescendantAdded:Connect(updateInventory)
+            child.DescendantRemoving:Connect(updateInventory)
+        end
+    end)
+    
+    local inventory = player:FindFirstChild("Inventory")
+    if inventory then
+        inventory.DescendantAdded:Connect(updateInventory)
+        inventory.DescendantRemoving:Connect(updateInventory)
+    end
+    
+    screenGui.Parent = player.PlayerGui
+    screenGui.Enabled = false
+    
+    return screenGui
+end
+
+-- Create UI when script loads
+inventoryUI = createInventoryUI()
+
+-- Toggle inventory with a key press
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.I then
+        inventoryUI.Enabled = not inventoryUI.Enabled
+    end
+end)
+
+-- Update currency display when it changes
+player:WaitForChild("leaderstats"):WaitForChild("Coins").Changed:Connect(function()
+    if inventoryUI.Enabled then
+        local currencyText = inventoryUI.Frame.CurrencyFrame.CurrencyText
+        currencyText.Text = tostring(player.leaderstats.Coins.Value)
+    end
+end)
